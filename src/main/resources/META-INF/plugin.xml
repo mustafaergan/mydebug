@@ -1,0 +1,57 @@
+<idea-plugin>
+    <id>com.optona.mydebug</id>
+    <name>MyDebug HotReload</name>
+    <vendor url="https://github.com/mustafaergan/mydebug">Optona</vendor>
+
+    <description><![CDATA[
+    <p>Save a file while debugging and see the change in the running JVM instantly &mdash; no restart.</p>
+    <p>MyDebug HotReload compiles what you saved and pushes the new bytecode into every active Java debug
+    session automatically. On a JVM that supports enhanced class redefinition (JetBrains Runtime, DCEVM)
+    it also enables structural changes such as adding or removing methods and fields.</p>
+    <ul>
+      <li><b>Reload on save</b> &mdash; Ctrl+S compiles incrementally and HotSwaps into the debuggee;
+          bursts of saves are batched into a single reload.</li>
+      <li><b>Enhanced redefinition, automatically</b> &mdash; when a debug run starts, the target JDK is probed once;
+          if it supports <code>-XX:+AllowEnhancedClassRedefinition</code> the flag is added. JDKs that do not
+          support it are left untouched, so the application always starts.</li>
+      <li><b>Framework reloads (optional)</b> &mdash; point the plugin to a HotswapAgent jar to reload Spring beans,
+          Hibernate mappings, resources and more.</li>
+      <li><b>Clear feedback</b> &mdash; reload time in the status bar, and a hint when a change needs
+          JetBrains Runtime.</li>
+    </ul>
+    <p>Settings: <i>Settings | Tools | MyDebug HotReload</i>. Actions: <i>Run | MyDebug: Reload on Save</i>
+    and <i>Run | MyDebug: Compile and Reload Now</i> (Ctrl+Alt+F9).</p>
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <notificationGroup id="MyDebug" displayType="BALLOON"/>
+        <applicationConfigurable parentId="tools" instance="com.optona.mydebug.MyDebugConfigurable"
+                                 id="com.optona.mydebug.settings" displayName="MyDebug HotReload"/>
+        <java.programPatcher implementation="com.optona.mydebug.EnhancedHotSwapPatcher"/>
+    </extensions>
+
+    <projectListeners>
+        <listener class="com.optona.mydebug.SaveListener"
+                  topic="com.intellij.openapi.vfs.newvfs.BulkFileListener"/>
+    </projectListeners>
+
+    <actions>
+        <group id="MyDebug.Group" text="MyDebug" popup="false">
+            <separator/>
+            <action id="MyDebug.ToggleAutoReload" class="com.optona.mydebug.ToggleAutoReloadAction"
+                    text="MyDebug: Reload on Save"
+                    description="Compile saved files and HotSwap them into the running debug session automatically"
+                    icon="AllIcons.Actions.Refresh"/>
+            <action id="MyDebug.ReloadNow" class="com.optona.mydebug.ReloadNowAction"
+                    text="MyDebug: Compile and Reload Now"
+                    description="Save all, compile incrementally and reload changed classes into the debug session"
+                    icon="AllIcons.Actions.Rerun">
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt F9"/>
+            </action>
+            <add-to-group group-id="RunMenu" anchor="last"/>
+        </group>
+    </actions>
+</idea-plugin>
