@@ -1,8 +1,6 @@
 package com.optona.mydebug;
 
-import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.options.Configurable;
-import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.util.ui.FormBuilder;
@@ -13,7 +11,6 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
-import java.util.Objects;
 
 /** Settings › Tools › MyDebug HotReload */
 public final class MyDebugConfigurable implements Configurable {
@@ -22,7 +19,7 @@ public final class MyDebugConfigurable implements Configurable {
     private JSpinner debounce;
     private JBCheckBox notifySuccess;
     private JBCheckBox enhanced;
-    private TextFieldWithBrowseButton agentJar;
+    private JBCheckBox frameworks;
 
     @Override
     public @Nls String getDisplayName() {
@@ -31,14 +28,12 @@ public final class MyDebugConfigurable implements Configurable {
 
     @Override
     public JComponent createComponent() {
-        enabled = new JBCheckBox("Reload into the debug session on save (HotSwap)");
+        enabled = new JBCheckBox("Reload into the running application on save");
         onlySaved = new JBCheckBox("Compile only the saved files (faster, does not recompile dependent classes)");
-        debounce = new JSpinner(new SpinnerNumberModel(300, 0, 5000, 50));
+        debounce = new JSpinner(new SpinnerNumberModel(150, 0, 5000, 50));
         notifySuccess = new JBCheckBox("Show successful reloads in the status bar");
-        enhanced = new JBCheckBox("Add -XX:+AllowEnhancedClassRedefinition to debug runs when the JVM supports it");
-        agentJar = new TextFieldWithBrowseButton();
-        agentJar.addBrowseFolderListener(null,
-                FileChooserDescriptorFactory.createSingleFileDescriptor("jar").withTitle("HotswapAgent jar"));
+        enhanced = new JBCheckBox("Add -XX:+AllowEnhancedClassRedefinition to Run/Debug when the JVM supports it");
+        frameworks = new JBCheckBox("Attach the MyDebug agent to Run/Debug (Spring, MyBatis, reload without debugger)");
 
         JPanel panel = FormBuilder.createFormBuilder()
                 .addComponent(enabled)
@@ -50,10 +45,11 @@ public final class MyDebugConfigurable implements Configurable {
                 .addComponentToRightColumn(hint(
                         "JetBrains Runtime (JBR) and DCEVM allow adding/removing methods and fields and changing signatures. "
                                 + "The flag is added only after the JVM is verified to support it."))
-                .addLabeledComponent("HotswapAgent jar (optional):", agentJar)
+                .addComponent(frameworks)
                 .addComponentToRightColumn(hint(
-                        "Reloads Spring beans, Hibernate mappings, resources and more. "
-                                + "Download it from github.com/HotswapProjects/HotswapAgent releases."))
+                        "Re-injects changed Spring beans, maps new or changed endpoints, registers new @Component classes "
+                                + "and reloads MyBatis mapper XML. In Run mode the agent reloads classes itself, "
+                                + "so no debugger is needed. Takes effect on the next launch."))
                 .addComponentFillVertically(new JPanel(), 0)
                 .getPanel();
         reset();
@@ -75,7 +71,7 @@ public final class MyDebugConfigurable implements Configurable {
                 || (int) debounce.getValue() != s.debounceMs
                 || notifySuccess.isSelected() != s.notifyOnSuccess
                 || enhanced.isSelected() != s.patchEnhancedRedefinition
-                || !Objects.equals(agentJar.getText().trim(), s.hotswapAgentJar);
+                || frameworks.isSelected() != s.frameworkReload;
     }
 
     @Override
@@ -86,7 +82,7 @@ public final class MyDebugConfigurable implements Configurable {
         s.debounceMs = (int) debounce.getValue();
         s.notifyOnSuccess = notifySuccess.isSelected();
         s.patchEnhancedRedefinition = enhanced.isSelected();
-        s.hotswapAgentJar = agentJar.getText().trim();
+        s.frameworkReload = frameworks.isSelected();
     }
 
     @Override
@@ -97,6 +93,6 @@ public final class MyDebugConfigurable implements Configurable {
         debounce.setValue(s.debounceMs);
         notifySuccess.setSelected(s.notifyOnSuccess);
         enhanced.setSelected(s.patchEnhancedRedefinition);
-        agentJar.setText(s.hotswapAgentJar);
+        frameworks.setSelected(s.frameworkReload);
     }
 }

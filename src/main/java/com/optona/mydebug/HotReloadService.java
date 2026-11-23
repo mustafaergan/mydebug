@@ -18,6 +18,10 @@ import com.intellij.openapi.wm.WindowManager;
 import com.intellij.openapi.wm.StatusBar;
 import com.intellij.notification.NotificationAction;
 import com.intellij.util.concurrency.AppExecutorUtil;
+import com.intellij.execution.process.ProcessHandler;
+import com.intellij.task.ProjectTaskManager;
+import org.jetbrains.concurrency.Promise;
+import java.util.concurrent.ConcurrentHashMap;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,6 +47,8 @@ public final class HotReloadService implements Disposable {
     private ScheduledFuture<?> scheduled;
     private boolean running;
     private volatile boolean disposed;
+    /** Ajanla Run modunda çalışan süreçler: kaydedince yalnızca derlenir, yüklemeyi ajan yapar. */
+    private final Set<ProcessHandler> agentProcesses = ConcurrentHashMap.newKeySet();
 
     public HotReloadService(Project project) {
         this.project = project;
@@ -52,9 +58,22 @@ public final class HotReloadService implements Disposable {
         return project.getService(HotReloadService.class);
     }
 
-    /** Kaydedilen dosyaları kuyruğa alır; aktif, HotSwap destekli bir debug oturumu yoksa hiçbir şey yapmaz. */
+    void agentProcessStarted(ProcessHandler handler) {
+        agentProcesses.add(handler);
+    }
+
+    void agentProcessTerminated(ProcessHandler handler) {
+        agentProcesses.remove(handler);
+    }
+
+    private boolean hasAgentProcesses() {
+        agentProcesses.removeIf(h -> h.isProcessTerminated() || h.isProcessTerminating());
+        return !agentProcesses.isEmpty();
+    }
+
+    /** Kaydedilen dosyaları kuyruğa alır; debug oturumu ya da ajanlı Run süreci yoksa hiçbir şey yapmaz. */
     void onSaved(Collection<VirtualFile> files) {
-        if (disposed || hotSwappableSessions().isEmpty()) return;
+        if (disposed || (hotSwappableSessions().isEmpty() && !hasAgentProcesses())) return;
         synchronized (lock) {
             pending.addAll(files);
             if (!running) scheduleLocked();
@@ -64,8 +83,9 @@ public final class HotReloadService implements Disposable {
     /** Elle tetikleme (eylem): bekleyen bir şey olmasa da artımlı derleme + yükleme yapar. */
     void reloadNow() {
         List<DebuggerSession> sessions = hotSwappableSessions();
-        if (sessions.isEmpty()) {
-            notify(NotificationType.INFORMATION, "No active Java debug session.");
+        boolean agentRuns = hasAgentProcesses();
+        if (sessions.isEmpty() && !agentRuns) {
+            notify(NotificationType.INFORMATION, "No running application started with MyDebug (Run or Debug).");
             return;
         }
         synchronized (lock) {
@@ -73,8 +93,26 @@ public final class HotReloadService implements Disposable {
             running = true;
         }
         long start = System.nanoTime();
-        ApplicationManager.getApplication().invokeLater(
-                () -> reloadSessions(sessions, 0, true, start, "manual reload"), project.getDisposed());
+        ApplicationManager.getApplication().invokeLater(() -> {
+            if (!sessions.isEmpty()) reloadSessions(sessions, 0, true, start, "manual reload");
+            else compileForAgent(ProjectTaskManager.getInstance(project).buildAllModules(), start, "manual reload");
+        }, project.getDisposed());
+    }
+
+    /** Run modu: IDE yalnızca derler; ajan çıktı klasöründeki değişikliği görüp sınıfları ve çerçeveleri yeniler. */
+    private void compileForAgent(Promise<ProjectTaskManager.Result> build, long startNanos, String label) {
+        showStatus("MyDebug: compiling " + label + "…");
+        build.onProcessed(result -> {
+            long ms = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
+            if (result == null || result.isAborted()) {
+                showStatus("MyDebug: compilation cancelled");
+            } else if (result.hasErrors()) {
+                showStatus("MyDebug: compilation failed, nothing reloaded (" + label + ")");
+            } else if (MyDebugSettings.settings().notifyOnSuccess) {
+                showStatus("MyDebug: compiled " + label + " in " + ms + " ms · agent reloading");
+            }
+            finished();
+        });
     }
 
     private void scheduleLocked() {
@@ -98,7 +136,7 @@ public final class HotReloadService implements Disposable {
     private void start(List<VirtualFile> files) {
         List<VirtualFile> valid = files.stream().filter(VirtualFile::isValid).toList();
         List<DebuggerSession> sessions = hotSwappableSessions();
-        if (valid.isEmpty() || sessions.isEmpty()) {
+        if (valid.isEmpty() || (sessions.isEmpty() && !hasAgentProcesses())) {
             finished();
             return;
         }
@@ -109,6 +147,14 @@ public final class HotReloadService implements Disposable {
                 .filter(f -> CODE_EXTENSIONS.contains(String.valueOf(f.getExtension()).toLowerCase(Locale.ROOT)))
                 .toList();
         boolean onlyCode = code.size() == valid.size();
+
+        if (sessions.isEmpty()) {
+            ProjectTaskManager tasks = ProjectTaskManager.getInstance(project);
+            compileForAgent(MyDebugSettings.settings().compileOnlySavedFiles && onlyCode
+                    ? tasks.compile(code.toArray(VirtualFile.EMPTY_ARRAY))
+                    : tasks.buildAllModules(), startNanos, label);
+            return;
+        }
 
         if (MyDebugSettings.settings().compileOnlySavedFiles && onlyCode) {
             // Hızlı yol: yalnızca kaydedilen dosyalar derlenir; IDE derleme bitince oturumlara kendisi yükler.

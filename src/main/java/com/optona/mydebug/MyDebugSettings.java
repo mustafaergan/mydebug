@@ -18,13 +18,16 @@ public final class MyDebugSettings implements PersistentStateComponent<MyDebugSe
         /** true: yalnızca kaydedilen dosyaları derle (en hızlı). false: artımlı proje derlemesi (en güvenli). */
         public boolean compileOnlySavedFiles = false;
         /** Ardışık kaydetmeleri tek yüklemede toplamak için bekleme (ms). */
-        public int debounceMs = 300;
+        public int debounceMs = 150;
         /** Başarılı yüklemeyi durum çubuğunda göster. */
         public boolean notifyOnSuccess = true;
-        /** Debug başlatılırken JVM destekliyorsa -XX:+AllowEnhancedClassRedefinition ekle. */
+        /** Run/Debug başlatılırken JVM destekliyorsa -XX:+AllowEnhancedClassRedefinition ekle. */
         public boolean patchEnhancedRedefinition = true;
-        /** HotswapAgent jar yolu (Spring, Hibernate vb. çerçeve yenilemeleri için). Boşsa kullanılmaz. */
-        public String hotswapAgentJar = "";
+        /**
+         * Gömülü MyDebug ajanını Run ve Debug başlatmalarına ekle: Spring bean/endpoint ve MyBatis mapper
+         * yenileme, ayrıca debugger olmadan (Run modunda) sınıf yükleme.
+         */
+        public boolean frameworkReload = true;
     }
 
     private State state = new State();

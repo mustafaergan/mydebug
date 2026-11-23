@@ -62,3 +62,10 @@ tasks.withType<JavaCompile>().configureEach {
     // 2024.3+ IDE'ler Java 21 üzerinde çalışır; bayt kodu 21 hedeflenir.
     options.release = 21
 }
+
+// Gömülü çalışma zamanı ajanı: eklenti klasöründe agent/mydebug-agent.jar olarak durur.
+tasks.named<org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask>("prepareSandbox") {
+    from(project(":agent").tasks.named("jar")) {
+        into(rootProject.name + "/agent")
+    }
+}
