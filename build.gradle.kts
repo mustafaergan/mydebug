@@ -63,8 +63,14 @@ tasks.withType<JavaCompile>().configureEach {
     options.release = 21
 }
 
+// runIde açılışta örnek projeyi açsın: .\gradlew.bat runIde -PrunIdeProject=samples/spring-mybatis
+tasks.named<JavaExec>("runIde") {
+    providers.gradleProperty("runIdeProject").orNull?.let { args(file(it).absolutePath) }
+}
+
 // Gömülü çalışma zamanı ajanı: eklenti klasöründe agent/mydebug-agent.jar olarak durur.
-tasks.named<org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask>("prepareSandbox") {
+// (buildPlugin'in prepareSandbox'ı ve runIde'nin prepareSandbox_runIde'si dahil, tüm sandbox görevleri)
+tasks.withType<org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask>().configureEach {
     from(project(":agent").tasks.named("jar")) {
         into(rootProject.name + "/agent")
     }
