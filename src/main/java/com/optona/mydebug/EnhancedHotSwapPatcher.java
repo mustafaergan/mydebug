@@ -7,10 +7,7 @@ import com.intellij.execution.configurations.RunProfile;
 import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.execution.executors.DefaultRunExecutor;
 import com.intellij.execution.runners.JavaProgramPatcher;
-import com.intellij.ide.plugins.IdeaPluginDescriptor;
-import com.intellij.ide.plugins.PluginManagerCore;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.projectRoots.Sdk;
 
 import java.io.File;
@@ -68,11 +65,23 @@ public final class EnhancedHotSwapPatcher extends JavaProgramPatcher {
         }
     }
 
+    /** Eklenti düzeni: &lt;eklenti&gt;/lib/mydebug-x.jar ve &lt;eklenti&gt;/agent/mydebug-agent.jar. */
     static Path agentJar() {
-        IdeaPluginDescriptor plugin = PluginManagerCore.getPlugin(PluginId.getId(PLUGIN_ID));
-        if (plugin == null) return null;
-        Path jar = plugin.getPluginPath().resolve("agent").resolve("mydebug-agent.jar");
-        return Files.isRegularFile(jar) ? jar : null;
+        try {
+            java.security.CodeSource source = EnhancedHotSwapPatcher.class.getProtectionDomain().getCodeSource();
+            String fallback = com.intellij.openapi.application.PathManager.getJarPathForClass(EnhancedHotSwapPatcher.class);
+            Path ownJar = source != null && source.getLocation() != null
+                    ? Path.of(source.getLocation().toURI())
+                    : fallback == null ? null : Path.of(fallback);
+            if (ownJar == null) return null;
+            Path pluginRoot = ownJar.getParent() == null ? null : ownJar.getParent().getParent();
+            if (pluginRoot == null) return null;
+            Path jar = pluginRoot.resolve("agent").resolve("mydebug-agent.jar");
+            return Files.isRegularFile(jar) ? jar : null;
+        } catch (Exception e) {
+            LOG.warn("MyDebug: cannot locate bundled agent", e);
+            return null;
+        }
     }
 
     /** Sınıf yolundaki derleme çıktı klasörlerini geçici bir dosyaya yazar (komut satırı uzunluğu sınırına takılmaz). */
