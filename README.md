@@ -2,8 +2,16 @@
 
 Save a file and see the change in the running Java application instantly — no restart, with or without the debugger.
 
-MyDebug HotReload is an IntelliJ IDEA plugin (2024.3+) that compiles what you saved and reloads it into the running
-JVM. A small bundled agent (Java 8+, no dependencies) refreshes Spring and MyBatis so the change is live right away.
+MyDebug HotReload compiles what you saved and reloads it into the running JVM. A small bundled agent (Java 8+, no
+dependencies) refreshes Spring and MyBatis so the change is live right away.
+
+| IDE | Install | Source |
+|---|---|---|
+| IntelliJ IDEA 2024.3+ | [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/36412-mydebug-hotreload) | [`intellij/`](intellij) |
+| VS Code (Debugger for Java) | VS Code Marketplace / Open VSX: *MyDebug HotReload* | [`vscode/`](vscode) |
+| Eclipse 2024-09+ (Java 21) | Update site `https://mustafaergan.github.io/mydebug/eclipse/` | [`eclipse/`](eclipse) |
+
+All three share the same agent ([`agent/`](agent)). Setup video (Turkish): https://mustafaergan.github.io/mydebug/
 
 | Change | Standard JDK | JetBrains Runtime / DCEVM |
 |---|---|---|
@@ -51,11 +59,14 @@ For structural changes, run the application on **JetBrains Runtime** (Project St
 ## Build
 
 ```powershell
-$env:JAVA_HOME="$env:USERPROFILE\.jdks\ms-25.0.4.1"; .\gradlew.bat buildPlugin
+$env:JAVA_HOME="$env:USERPROFILE\.jdks\ms-25.0.4.1"; .\gradlew.bat :agent:jar :intellij:buildPlugin
 ```
 
-Output: `build/distributions/mydebug-<version>.zip`. Try it in a sandbox IDE with `.\gradlew.bat runIde`,
-check compatibility with `.\gradlew.bat verifyPlugin`.
+- IntelliJ: `intellij/build/distributions/mydebug-<version>.zip`; sandbox IDE `.\gradlew.bat :intellij:runIde`,
+  compatibility `.\gradlew.bat :intellij:verifyPlugin`.
+- VS Code: `cd vscode; npm install; npx vsce package --no-dependencies` (needs `:agent:jar` first).
+- Eclipse: `cd eclipse; mvn clean verify` (Tycho, needs `:agent:jar` first); update site in
+  `eclipse/com.optona.mydebug.eclipse.site/target/repository`.
 
 ## License
 

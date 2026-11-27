@@ -32,6 +32,8 @@ dependencies {
 }
 
 intellijPlatform {
+    // Zip ve sandbox klasörü Marketplace sürümleriyle aynı kalsın (intellij/ değil mydebug/).
+    projectName = "mydebug"
     buildSearchableOptions = false
     // GUI Designer formu yok; @NotNull çalışma zamanı denetimine de gerek yok.
     instrumentCode = false
@@ -63,15 +65,18 @@ tasks.withType<JavaCompile>().configureEach {
     options.release = 21
 }
 
-// runIde açılışta örnek projeyi açsın: .\gradlew.bat runIde -PrunIdeProject=samples/spring-mybatis
+// runIde açılışta örnek projeyi açsın: .\gradlew.bat runIde -PrunIdeProject=samples/spring-mybatis (kökten :intellij:runIde)
 tasks.named<JavaExec>("runIde") {
-    providers.gradleProperty("runIdeProject").orNull?.let { args(file(it).absolutePath) }
+    providers.gradleProperty("runIdeProject").orNull?.let { args(rootProject.file(it).absolutePath) }
 }
 
 // Gömülü çalışma zamanı ajanı: eklenti klasöründe agent/mydebug-agent.jar olarak durur.
 // (buildPlugin'in prepareSandbox'ı ve runIde'nin prepareSandbox_runIde'si dahil, tüm sandbox görevleri)
 tasks.withType<org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask>().configureEach {
     from(project(":agent").tasks.named("jar")) {
-        into(rootProject.name + "/agent")
+        into("mydebug/agent")
     }
 }
+
+// İç jar adı Marketplace sürümleriyle aynı kalsın (mydebug-<sürüm>.jar).
+tasks.named<Jar>("jar") { archiveBaseName = "mydebug" }

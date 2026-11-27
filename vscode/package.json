@@ -1,0 +1,89 @@
+{
+  "name": "mydebug-hotreload",
+  "displayName": "MyDebug HotReload",
+  "description": "Save a Java file and see the change in the running application instantly. Spring and MyBatis reload, with or without the debugger.",
+  "version": "0.1.0",
+  "publisher": "optona",
+  "license": "Apache-2.0",
+  "icon": "images/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mustafaergan/mydebug"
+  },
+  "homepage": "https://mustafaergan.github.io/mydebug/",
+  "bugs": {
+    "url": "https://github.com/mustafaergan/mydebug/issues"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Debuggers",
+    "Other"
+  ],
+  "keywords": [
+    "java",
+    "hot reload",
+    "hotswap",
+    "spring",
+    "mybatis"
+  ],
+  "activationEvents": [
+    "onDebugResolve:java",
+    "onLanguage:java"
+  ],
+  "main": "./out/extension.js",
+  "extensionDependencies": [
+    "vscjava.vscode-java-debug"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "mydebug.toggle",
+        "title": "MyDebug: Toggle Reload Agent"
+      }
+    ],
+    "configuration": {
+      "title": "MyDebug HotReload",
+      "properties": {
+        "mydebug.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Attach the MyDebug agent to Java launches (Run and Debug). Takes effect on the next launch."
+        },
+        "mydebug.enhancedRedefinition": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "always",
+            "never"
+          ],
+          "default": "auto",
+          "enumDescriptions": [
+            "Add -XX:+AllowEnhancedClassRedefinition when the launch sets \"javaExec\" to a JVM that supports it (JetBrains Runtime, DCEVM).",
+            "Always add the flag. The JVM must support it, otherwise it will not start.",
+            "Never add the flag."
+          ],
+          "description": "Allow structural changes (adding or removing methods and fields) on JetBrains Runtime."
+        },
+        "mydebug.verbose": {
+          "type": "boolean",
+          "default": false,
+          "description": "Print agent details to the debug console."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "copy-agent": "node scripts/copy-agent.js",
+    "compile": "tsc -p ./",
+    "vscode:prepublish": "npm run copy-agent && npm run compile",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.0.0",
+    "typescript": "^5.4.0"
+  }
+}

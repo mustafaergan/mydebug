@@ -74,15 +74,58 @@ public final class MyDebugAgent {
             }
         }
         if (raw.isEmpty()) {
-            for (String entry : System.getProperty("java.class.path", "").split(File.pathSeparator)) raw.add(entry);
+            for (String entry : System.getProperty("java.class.path", "").split(File.pathSeparator)) {
+                raw.add(entry);
+                raw.addAll(manifestClassPath(entry));
+            }
         }
         List<Path> dirs = new ArrayList<Path>();
         for (String entry : raw) {
             entry = entry.trim();
             if (entry.isEmpty()) continue;
-            Path p = Paths.get(entry).toAbsolutePath().normalize();
-            if (Files.isDirectory(p) && !dirs.contains(p)) dirs.add(p);
+            try {
+                Path p = Paths.get(entry).toAbsolutePath().normalize();
+                if (Files.isDirectory(p) && !dirs.contains(p)) dirs.add(p);
+            } catch (Exception ignored) {
+                // geçersiz yol
+            }
         }
         return dirs;
+    }
+
+    /**
+     * Uzun komut satırlarında IDE'ler (VS Code, Eclipse, IntelliJ) sınıf yolunu yalnızca manifest içeren bir jar'a koyar;
+     * onun Class-Path girdilerini (URL biçiminde) dosya yollarına çevirir.
+     */
+    private static List<String> manifestClassPath(String entry) {
+        List<String> result = new ArrayList<String>();
+        if (!entry.endsWith(".jar")) return result;
+        java.util.jar.JarFile jar = null;
+        try {
+            jar = new java.util.jar.JarFile(entry);
+            java.util.jar.Manifest mf = jar.getManifest();
+            String cp = mf == null ? null : mf.getMainAttributes().getValue("Class-Path");
+            if (cp == null) return result;
+            File base = new File(entry).getAbsoluteFile().getParentFile();
+            for (String item : cp.trim().split("\\s+")) {
+                try {
+                    java.net.URI uri = new java.net.URI(item);
+                    result.add(uri.isAbsolute() ? new File(uri).getPath() : new File(base, item).getPath());
+                } catch (Exception e) {
+                    result.add(new File(base, item).getPath());
+                }
+            }
+        } catch (Exception ignored) {
+            // jar okunamadı
+        } finally {
+            if (jar != null) {
+                try {
+                    jar.close();
+                } catch (Exception ignored) {
+                    // önemsiz
+                }
+            }
+        }
+        return result;
     }
 }

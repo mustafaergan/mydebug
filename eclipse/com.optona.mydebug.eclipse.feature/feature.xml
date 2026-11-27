@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="com.optona.mydebug.eclipse.feature"
+      label="MyDebug HotReload"
+      version="0.1.0.qualifier"
+      provider-name="Optona">
+
+   <description url="https://mustafaergan.github.io/mydebug/">
+      Save a Java file and see the change in the running application instantly, without a restart. A bundled agent
+reloads changed classes in Run and Debug and refreshes Spring (endpoints, injected fields, new beans) and MyBatis
+(mapper XML). On JetBrains Runtime, adding or removing methods and fields reloads too.
+   </description>
+
+   <copyright url="https://github.com/mustafaergan/mydebug">
+      Copyright Optona.
+   </copyright>
+
+   <license url="https://www.apache.org/licenses/LICENSE-2.0">
+      Licensed under the Apache License, Version 2.0. You may obtain a copy of the License at
+https://www.apache.org/licenses/LICENSE-2.0
+   </license>
+
+   <plugin
+         id="com.optona.mydebug.eclipse"
+         version="0.0.0"/>
+</feature>

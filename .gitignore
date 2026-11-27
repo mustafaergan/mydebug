@@ -5,3 +5,13 @@ out/
 .idea/
 *.iml
 .kotlin/
+
+# Yerel video çıktıları (yayınlanan kopya docs/ içinde)
+video/
+# VS Code eklentisi
+vscode/node_modules/
+vscode/out/
+*.vsix
+# Eclipse eklentisi
+eclipse/**/target/
+vscode/agent/

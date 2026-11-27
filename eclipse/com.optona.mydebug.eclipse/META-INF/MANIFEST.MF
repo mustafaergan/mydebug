@@ -1,0 +1,17 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: MyDebug HotReload
+Bundle-SymbolicName: com.optona.mydebug.eclipse;singleton:=true
+Bundle-Version: 0.1.0.qualifier
+Bundle-Vendor: Optona
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Automatic-Module-Name: com.optona.mydebug.eclipse
+Bundle-ActivationPolicy: lazy
+Require-Bundle: org.eclipse.core.runtime,
+ org.eclipse.core.jobs,
+ org.eclipse.equinox.preferences,
+ org.eclipse.jface,
+ org.eclipse.swt,
+ org.eclipse.ui,
+ org.eclipse.ui.workbench,
+ org.eclipse.jdt.launching

@@ -1,2 +1,2 @@
 rootProject.name = "mydebug"
-include("agent")
+include("agent", "intellij")
