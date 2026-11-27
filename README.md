@@ -8,8 +8,8 @@ dependencies) refreshes Spring and MyBatis so the change is live right away.
 | IDE | Install | Source |
 |---|---|---|
 | IntelliJ IDEA 2024.3+ | [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/36412-mydebug-hotreload) | [`intellij/`](intellij) |
-| VS Code (Debugger for Java) | VS Code Marketplace / Open VSX: *MyDebug HotReload* | [`vscode/`](vscode) |
-| Eclipse 2024-09+ (Java 21) | Update site `https://mustafaergan.github.io/mydebug/eclipse/` | [`eclipse/`](eclipse) |
+| VS Code (Debugger for Java) | [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=optona.mydebug-hotreload) | [`vscode/`](vscode) |
+| Eclipse 2024-09+ (Java 21) | [Eclipse Marketplace](https://marketplace.eclipse.org/content/mydebug-hotreload) · update site `https://mustafaergan.github.io/mydebug/eclipse/` | [`eclipse/`](eclipse) |
 
 All three share the same agent ([`agent/`](agent)). Setup video (Turkish): https://mustafaergan.github.io/mydebug/
 
